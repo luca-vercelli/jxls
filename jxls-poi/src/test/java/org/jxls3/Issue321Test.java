@@ -4,8 +4,10 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.jxls.Jxls3Tester;
 import org.jxls.TestWorkbook;
@@ -14,25 +16,32 @@ import org.jxls.transform.poi.JxlsPoiTemplateFillerBuilder;
 
 public class Issue321Test {
 
+    int dataSize;
+    Map<String, Object> data;
+
+    @Before
+    public void setUp() {
+        List<Employee> list = Employee.generateSampleEmployeeData();
+        data = new HashMap<>();
+        data.put("employees", list);
+        dataSize = list.size();
+    }
+
+
     @Test
     public void testMoreCommandsOnSameLine() throws IOException {
-        Map<String, Object> data = createData();
         Jxls3Tester tester = Jxls3Tester.xlsx(getClass());
         tester.test(data, JxlsPoiTemplateFillerBuilder.newInstance());
         try (TestWorkbook w = tester.getWorkbook()) {
-            int afterData = data.size() + 1;
-            assertEquals("SOME", w.getCellValueAsString(afterData, 0));
-            assertEquals("SPACE", w.getCellValueAsString(afterData, 1));
-            assertEquals("User", w.getCellValueAsString(afterData + 1, 0));
-            assertEquals("Name", w.getCellValueAsString(afterData + 1, 1));
-            assertEquals("LAST ROW", w.getCellValueAsString(afterData + 2, 0));
-            assertEquals("AT LAST", w.getCellValueAsString(afterData + 3, 1));
+            w.selectSheet(0);
+            int afterData = dataSize + 2; // 1-based
+            assertEquals("SOME", w.getCellValueAsString(afterData, 1));
+            assertEquals("SPACE", w.getCellValueAsString(afterData, 2));
+            assertEquals("User", w.getCellValueAsString(afterData + 1, 1));
+            assertEquals("Name", w.getCellValueAsString(afterData + 1, 2));
+            assertEquals("LAST ROW", w.getCellValueAsString(afterData + 2, 1));
+            assertEquals("AT LAST", w.getCellValueAsString(afterData + 3, 2));
         }
     }
 
-    private Map<String, Object> createData() {
-        Map<String, Object> data = new HashMap<>();
-        data.put("employees", Employee.generateSampleEmployeeData());
-        return data;
-    }
 }
