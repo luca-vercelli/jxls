@@ -31,9 +31,9 @@ public class XlsArea implements Area {
     private List<CommandData> commandDataList = new ArrayList<>();
     private Transformer transformer;
     private Command parentCommand;
-    private CellRange cellRange;
-    private CellRef startCellRef;
-    private Size size;
+    private CellRange cellRange;  // range of cells in the area, with transformations
+    private CellRef startCellRef;   // top left cell of the area (without transformations)
+    private Size size; // size of the area, without transformations
     private List<AreaListener> areaListeners = new ArrayList<>();
     private boolean cellsCleared = false;
     private final CellShiftStrategy innerCellShiftStrategy = new InnerCellShiftStrategy();
@@ -116,6 +116,10 @@ public class XlsArea implements Area {
         );
     }
 
+    /**
+     * Initialize cellRange to the area given by startCellRef and size.
+     * Exclude cells that are locked by some commands.
+     */
     private void createCellRange() {
         cellRange = new CellRange(startCellRef, size.getWidth(), size.getHeight());
         for (CommandData commandData : commandDataList) {
@@ -234,6 +238,10 @@ public class XlsArea implements Area {
         }
     }
 
+    /**
+     * Apply transformer to all cells in range, then mark them as "transformed".
+     * Fire before/after tranform events.
+     */
     private void transformStaticCells(CellRef cellRef, Context context, AreaRef commandsArea) {
         int relativeStartRow = commandsArea.getFirstCellRef().getRow();
         int relativeStartCol = commandsArea.getFirstCellRef().getCol() + 1;
@@ -283,6 +291,11 @@ public class XlsArea implements Area {
         return result;
     }
 
+    /**
+     * Search for "high" commands overlapping the area (startCol, endCol, startRow, endRow).<br/>
+     * Return false if there exists a command whose columns are enterely in the area
+     * and whose rows are party inside, partly outside.
+     */
     private boolean isNoHighCommandsInArea(List<CommandData> commandList, int startCol, int endCol, int startRow, int endRow) {
         for (CommandData commandData : commandList) {
             CellRef commandDataStartCellRef = commandData.getStartCellRef();
@@ -338,6 +351,11 @@ public class XlsArea implements Area {
         return result;
     }
 
+    /**
+     * Search for "wide" commands overlapping the area (startCol, endCol, startRow, endRow).<br/>
+     * Return false if there exists a command whose rows are enterely in the area
+     * and whose columns are party inside, partly outside.
+     */
     private boolean isNoWideCommandsInArea(List<CommandData> commandList, int startCol, int endCol, int startRow, int endRow) {
         for (CommandData commandData : commandList) {
             CellRef commandDataStartCellRef = commandData.getStartCellRef();
@@ -378,6 +396,14 @@ public class XlsArea implements Area {
         }
     }
 
+    /**
+     * Apply trasformer to all cells in the upper part of the area, above all its
+     * commands.
+     *
+     * @return an area contained within one of the upper-left-most and one of the
+     *         lower-most corners
+     *         (is this correct? I suspect this was not the intended result)
+     */
     private AreaRef transformTopStaticArea(CellRef cellRef, Context context) {
         CellRef topLeftCommandCell = findRelativeTopCommandCellRef();
         CellRef bottomRightCommandCell = findRelativeBottomCommandCellRef();
@@ -394,6 +420,10 @@ public class XlsArea implements Area {
         return new AreaRef(topLeftCommandCell, bottomRightCommandCell);
     }
 
+    /**
+     * Apply transformer to a single cell, then mark it as "transformed".
+     * Fire before/after tranform events.
+     */
     private void transformStaticCell(CellRef cellRef, Context context, int row, int col) {
         String sheetName = startCellRef.getSheetName();
         int startRow = startCellRef.getRow();
@@ -431,6 +461,11 @@ public class XlsArea implements Area {
         }
     }
 
+    /**
+     * Within the area, pick one command whise upper-left corner is (one of) the most upper-left.
+     * Order of commands is worth.
+     * @return a CellRef relative to this area coordinates.
+     */
     private CellRef findRelativeTopCommandCellRef() {
         int topCommandRow = startCellRef.getRow() + size.getHeight();
         int topCommandCol = startCellRef.getCol() + size.getWidth();
@@ -443,6 +478,14 @@ public class XlsArea implements Area {
         return new CellRef(topCommandRow - startCellRef.getRow(), topCommandCol - startCellRef.getCol());
     }
 
+    /**
+     * Within the area, pick one command whose lower edge is (one of) the lowest.
+     * Order of commands is worth.
+     * 
+     * FIXME: why not looking at column/width here?
+     *
+     * @return a CellRef relative to this area coordinates, corresponding to lower-right corner of command
+     */
     private CellRef findRelativeBottomCommandCellRef() {
         int bottomCommandRow = startCellRef.getRow();
         int bottomCommandCol = startCellRef.getCol();
@@ -483,6 +526,10 @@ public class XlsArea implements Area {
         cellsCleared = true;
     }
 
+    /**
+     * Apply transformer to all cells in range, then mark them as "transformed".
+     * Fire before/after tranform events.
+     */
     private void transformStaticCells(CellRef cellRef, Context context,
                                       int relativeStartRow, int relativeStartCol,
                                       int relativeEndRow, int relativeEndCol) {
