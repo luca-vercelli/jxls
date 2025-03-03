@@ -80,6 +80,18 @@ public class CellRange {
         cells[row][col] = cellRef;
     }
 
+    /**
+     * Shift cells in the range after a columns of cells was moved to right.
+     * For each cell in range, verify if move is required and if it is allowed (i.e. not already moved).
+     * Mark cells as "changed".
+     * Update cell coordinates of moved cells.
+     *
+     * @param startRow start row of the block
+     * @param endRow end row of the block
+     * @param col column of the block
+     * @param colShift number of columns to shift
+     * @param updateColHeights whether to update rowWidths array
+     */ 
     public void shiftCellsWithRowBlock(int startRow, int endRow, int col, int colShift, boolean updateRowWidths) {
         for (int i = 0; i < height; i++) {
             for (int j = 0; j < width; j++) {
@@ -98,6 +110,10 @@ public class CellRange {
         }
     }
 
+    /**
+     * Horizontal shift of a cell (cellRow, cellCol) is not allowed if cell is already marked as "changed",
+     * or if widthChange < 0 and there is an empty between col and cellCol.
+     */
     private boolean isHorizontalShiftAllowed(int col, int widthChange, int cellRow, int cellCol) {
         if (statusMatrix[cellRow][cellCol] == CellStatus.CHANGED) {
             return false;
@@ -118,9 +134,17 @@ public class CellRange {
     }
 
     /**
+     * Shift cells in the range after a row of cells was moved downwards.
      * For each cell in range, verify if downwards move is required and if it is allowed (i.e. not already moved).
+     * Mark cells as "changed".
      * Update cell coordinates of moved cells.
-     */
+     *
+     * @param startCol start column of the block
+     * @param endCol end column of the block
+     * @param row row of the block
+     * @param rowShift number of rows to shift
+     * @param updateColHeights whether to update colHeights array
+     */ 
     public void shiftCellsWithColBlock(int startCol, int endCol, int row, int rowShift, boolean updateColHeights) {
         for (int i = 0; i < height; i++) {
             for (int j = 0; j < width; j++) {
@@ -141,7 +165,7 @@ public class CellRange {
 
     /**
      * Vertical shift of a cell (cellRow, cellCol) is not allowed if cell is already marked as CHANGED,
-     * or if heightChange < 0 and there is an empty cell above it
+     * or if heightChange < 0 and there is an empty cell between row and cellRow.
      */
     private boolean isVerticalShiftAllowed(int row, int heightChange, int cellRow, int cellCol) {
         if (statusMatrix[cellRow][cellCol] == CellStatus.CHANGED) {

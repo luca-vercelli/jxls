@@ -160,6 +160,16 @@ public class XlsArea implements Area {
         return finalSize;
     }
 
+    /**
+     * Process a single command in the area.
+     *
+     * @param commandData processed command
+     * @param i position of processed Command in commandDataList
+     * @param cellRef cell reference where the command must be applied (was passed to applyAt)
+     * @param lastProcessedRow last row that was processed by previous commands
+     * @param context
+     * @return updated lastProcessedRow
+     */
     private int processCommand(CommandData commandData, int i, CellRef cellRef, int lastProcessedRow, Context context) {
         cellRange.resetChangeMatrix();
         String shiftMode = commandData.getCommand().getShiftMode();
@@ -188,6 +198,16 @@ public class XlsArea implements Area {
         return lastProcessedRow;
     }
 
+    /**
+     * Process height change of the area, caused by a single command.
+     *
+     * @param i position of processed Command in commandDataList
+     * @param commandStartCellRef top-left cell of the command
+     * @param startCol Start column of the command, relative to this area
+     * @param endCol End column of command, relative to this area
+     * @param endRow End row of command, relative to this area
+     * @param heightChange Number of cells to shift. May be positive or negative.
+     */
     private void processHeightChange(int i, CellRef commandStartCellRef, int startCol, int endCol, int endRow, int heightChange) {
         cellRange.shiftCellsWithColBlock(startCol, endCol, endRow, heightChange, true);
         Set<CommandData> commandsToShift = findCommandsForVerticalShift(
@@ -213,6 +233,16 @@ public class XlsArea implements Area {
         }
     }
 
+    /**
+     * Process width change of the area, caused by a single command.
+     *
+     * @param i position of processed Command in commandDataList
+     * @param commandStartCellRef top-left cell of the command
+     * @param startRow Start row of the command, relative to this area
+     * @param endRow End row of command, relative to this area
+     * @param endCol End column of command, relative to this area
+     * @param widthChange Number of cells to shift. May be positive or negative.
+     */
     private void processWidthChange(int i, CellRef commandStartCellRef, int startRow, int endRow, int endCol, int widthChange) {
         cellRange.shiftCellsWithRowBlock(startRow, endRow, endCol, widthChange, true);
         Set<CommandData> commandsToShift = findCommandsForHorizontalShift(
