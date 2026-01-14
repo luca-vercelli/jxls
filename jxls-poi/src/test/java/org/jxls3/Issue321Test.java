@@ -24,23 +24,20 @@ public class Issue321Test {
         List<Employee> list = Employee.generateSampleEmployeeData();
         data = new HashMap<>();
         data.put("employees", list);
+        data.put("employees2", list);
         dataSize = list.size();
     }
 
 
     @Test
-    public void testMoreCommandsOnSameLine() throws IOException {
+    public void testMoreCommandsBeforeAThirdCommand() throws IOException {
         Jxls3Tester tester = Jxls3Tester.xlsx(getClass());
         tester.test(data, JxlsPoiTemplateFillerBuilder.newInstance());
         try (TestWorkbook w = tester.getWorkbook()) {
             w.selectSheet(0);
-            int afterData = dataSize + 2; // 1-based
-            assertEquals("SOME", w.getCellValueAsString(afterData, 1));
-            assertEquals("SPACE", w.getCellValueAsString(afterData, 2));
-            assertEquals("User", w.getCellValueAsString(afterData + 1, 1));
-            assertEquals("Name", w.getCellValueAsString(afterData + 1, 2));
-            assertEquals("LAST ROW", w.getCellValueAsString(afterData + 2, 1));
-            assertEquals("AT LAST", w.getCellValueAsString(afterData + 3, 2));
+            int afterData = dataSize + 2 /* header rows */ + 1 /* 1-based */;
+            assertEquals("d", w.getCellValueAsString(afterData, 2));
+            assertEquals("LAST ONE", w.getCellValueAsString(afterData + 3, 2));
         }
     }
 
