@@ -200,6 +200,7 @@ public class XlsArea implements Area {
 
     /**
      * Process height change of the area, caused by a single command.
+     * All arguments are 0-based and relative to this area.
      *
      * @param i position of processed Command in commandDataList
      * @param commandStartCellRef top-left cell of the command
@@ -213,15 +214,22 @@ public class XlsArea implements Area {
         Set<CommandData> commandsToShift = findCommandsForVerticalShift(
                 commandDataList.subList(i + 1, commandDataList.size()), startCol, endCol, endRow, heightChange);
         for (CommandData commandDataToShift : commandsToShift) {
+            
+            int realHeightChange = heightChange > 0 ?
+                Math.max(heightChange - commandDataToShift.getTmpMinBlankLines(), 0) :
+                heightChange;
+            commandDataToShift.setTmpMinBlankLines(0);
+            
             CellRef commandDataStartCellRef = commandDataToShift.getStartCellRef();
             int relativeRow = commandDataStartCellRef.getRow() - startCellRef.getRow();
             int relativeStartCol = commandDataStartCellRef.getCol() - startCellRef.getCol();
             int relativeEndCol = relativeStartCol + commandDataToShift.getSize().getWidth() - 1;
             cellRange.shiftCellsWithColBlock(relativeStartCol, relativeEndCol,
-                    relativeRow + commandDataToShift.getSize().getHeight() - 1, heightChange, false);
+                    relativeRow + commandDataToShift.getSize().getHeight() - 1, realHeightChange, false);
             commandDataToShift.setStartCellRef(new CellRef(commandStartCellRef.getSheetName(),
-                    commandDataStartCellRef.getRow() + heightChange, commandDataStartCellRef.getCol()));
-            if (heightChange < 0) {
+                    commandDataStartCellRef.getRow() + realHeightChange, commandDataStartCellRef.getCol()));
+            commandDataToShift.addBlankLines(realHeightChange, startCol, endCol);
+            if (realHeightChange < 0) {
                 CellRef initialStartCellRef = commandDataToShift.getSourceStartCellRef();
                 Size initialSize = commandDataToShift.getSourceSize();
                 int initialStartRow = initialStartCellRef.getRow() - startCellRef.getRow();
@@ -359,7 +367,13 @@ public class XlsArea implements Area {
                     if ((relativeStartCol >= startCol && relativeStartCol <= endCol)
                             || (relativeEndCol >= startCol && relativeEndCol <= endCol)
                             || (startCol >= relativeStartCol && startCol <= relativeEndCol)) {
-                        isShiftingNeeded = true;
+                                
+                        // check if already shifted by previous commands
+                        int minBlankLines = commandData.calcMinBlankLines(Math.max(startCol, relativeStartCol), Math.min(endCol, relativeEndCol));
+                        if (minBlankLines < heightChange) {
+                            commandData.setTmpMinBlankLines(minBlankLines);
+                            isShiftingNeeded = true;
+                        }
                     }
                 } else {
                     if (relativeStartCol >= startCol && relativeEndCol <= endCol && isNoWideCommandsInArea(commandList, startCol, endCol, shiftingRow + 1, relativeRow - 1)) {
